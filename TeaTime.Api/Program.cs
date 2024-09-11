@@ -14,7 +14,7 @@ builder.Services.AddScoped<IStoresService, StoreService>();
 builder.Services.AddScoped<IOrdersService, OrderService>();
 
 builder.Services.AddScoped<IStoresRepo,APIStoreRepo>();
-builder.Services.AddScoped<IOrdersRepo, InMemOrderRepo>();
+builder.Services.AddScoped<IOrdersRepo, APIOrderRepo>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

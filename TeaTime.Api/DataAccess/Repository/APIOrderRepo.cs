@@ -1,36 +1,71 @@
-﻿using TeaTime.Api.Domains.Order;
+﻿using System.Text;
+using System.Text.Json;
+using TeaTime.Api.Domains.Order;
+using TeaTime.Api.Domains.Store;
 
 namespace TeaTime.Api.DataAccess.Repository
 {
     public class APIOrderRepo:IOrdersRepo
     {
-        private readonly IConfiguration _configuration;
         private readonly HttpClient _httpClient;
+        private readonly string _baseUrl;
+
+        private static readonly JsonSerializerOptions _propertyNameCaseInsensitive = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
 
         public APIOrderRepo(IConfiguration configuration, HttpClient httpClient)
         {
-            this._configuration = configuration;
-            this._httpClient = httpClient;
+            _httpClient = httpClient;
+            _baseUrl = configuration["ApiSettings:BaseUrl"]!;
+
+            // 增加 header
+            var tokenHeader = configuration["ApiSettings:TokenHeader"]!;
+            var secretToken = configuration["ApiSettings:SecretToken"]!;
+            httpClient.DefaultRequestHeaders.Add(tokenHeader, secretToken);
         }
 
-        public Task<IEnumerable<Order?>?> GetOrders(long storeId)
+        public async Task<IEnumerable<Order?>?> GetOrders(long storeId)
         {
-            throw new NotImplementedException();
+            var response = await _httpClient.GetAsync($"{_baseUrl}/stores/{storeId}/orders");
+            response.EnsureSuccessStatusCode();
+
+            var content = await response.Content.ReadAsStringAsync();
+            var orders = JsonSerializer.Deserialize<IEnumerable<Order>>(content, _propertyNameCaseInsensitive);
+
+            return orders ?? Enumerable.Empty<Order>();
         }
 
-        public Task<IEnumerable<Order?>> GetStoreOrder(long storeId, long id)
+        public async Task<IEnumerable<Order?>> GetStoreOrder(long storeId, long id)
         {
-            throw new NotImplementedException();
+            var response = await _httpClient.GetAsync($"{_baseUrl}/stores/{storeId}/orders/{id}");
+            response.EnsureSuccessStatusCode();
+
+            var content = await response.Content.ReadAsStringAsync();
+            var orders = JsonSerializer.Deserialize<IEnumerable<Order>>(content, _propertyNameCaseInsensitive);
+
+            return orders ?? Enumerable.Empty<Order>();
         }
 
         public bool HaveOrders()
         {
-            throw new NotImplementedException();
+            var response =  _httpClient.GetAsync($"{_baseUrl}/stores/1/orders").Result;// 沒有查詢所有訂單的API，先寫死
+            return response.IsSuccessStatusCode;
         }
 
-        public Task<Order?> PostOrder(long storeId, OrderDTO orderDTO)
+        public async Task<Order?> PostOrder(long storeId, OrderDTO orderDTO)
         {
-            throw new NotImplementedException();
+            var json = JsonSerializer.Serialize(orderDTO);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync($"{_baseUrl}/stores/{storeId}/orders", content);
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var order = JsonSerializer.Deserialize<Order>(responseContent, _propertyNameCaseInsensitive);
+
+            return order;
         }
     }
 }

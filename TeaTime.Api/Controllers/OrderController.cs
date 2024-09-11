@@ -30,7 +30,7 @@ namespace TeaTime.Api.Controllers
             var orders = await _orderService.GetOrders(storeId);
             if (orders == null)
             {
-                return NotFound("查無此筆資料");
+                return NotFound("查無資料");
             }
             return Ok(orders);
         }
